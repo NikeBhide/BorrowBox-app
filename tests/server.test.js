@@ -218,14 +218,17 @@ describe("security", () => {
     expect(cookie.toLowerCase()).toContain("httponly");
   });
 
-  it("refuses to start in production without SESSION_SECRET", () => {
+  it("starts in production without SESSION_SECRET, using a random key and a warning", () => {
     const oldEnv = process.env.NODE_ENV;
     const oldSecret = process.env.SESSION_SECRET;
     process.env.NODE_ENV = "production";
     delete process.env.SESSION_SECRET;
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      expect(() => createApp({ db: openDb(":memory:") })).toThrow(/SESSION_SECRET/);
+      expect(() => createApp({ db: openDb(":memory:") })).not.toThrow();
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("SESSION_SECRET is not set"));
     } finally {
+      warn.mockRestore();
       process.env.NODE_ENV = oldEnv;
       if (oldSecret !== undefined) process.env.SESSION_SECRET = oldSecret;
     }

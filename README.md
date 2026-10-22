@@ -53,7 +53,7 @@ example `you@northfield.edu.in`.
 
 | Variable | Purpose |
 |---|---|
-| `SESSION_SECRET` | Long random string that signs login cookies. **Required** when `NODE_ENV=production` (the Docker image sets that), otherwise the app refuses to start. |
+| `SESSION_SECRET` | Long random string that signs login cookies. Strongly recommended in production. If it is missing, the app logs a warning and uses a random key for that run, which means everyone is logged out whenever it restarts. |
 | `PORT` | Port to listen on (default 3000). |
 | `DB_PATH` | Location of the SQLite file (default `data/borrowbox.db`; `/app/data/borrowbox.db` in Docker). |
 | `ADMIN_EMAILS` | Comma-separated emails that become college admins when they sign up. |
@@ -78,7 +78,7 @@ docker run -d --name borrowbox -p 3000:3000 \
   borrowbox
 ```
 
-The `-v` flag keeps the database when the container is replaced. The container
+The `-v` flag keeps the database when the container is replaced (without it, users and items are lost each time the container is recreated). The container
 reports health at `/health` (a quick database check).
 
 ## Running tests

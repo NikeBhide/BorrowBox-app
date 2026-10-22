@@ -5,13 +5,16 @@
 //
 // Settings (environment variables):
 //   PORT            port to listen on (default 3000)
-//   SESSION_SECRET  long random string used to sign login cookies. REQUIRED when
-//                   NODE_ENV=production. Never commit it to the repo.
+//   SESSION_SECRET  long random string used to sign login cookies. Strongly
+//                   recommended in production. If it is missing, the app makes a
+//                   random one for that run (everyone is logged out on restart).
+//                   Never commit it to the repo.
 //   DB_PATH         where the SQLite file lives (default data/borrowbox.db)
 //   ADMIN_EMAILS    comma-separated emails that become college admins on sign-up
 //   COOKIE_SECURE   "true" when the site is served over HTTPS
 //   TRUST_PROXY     number of proxies in front of the app (1 on Render/most hosts)
 
+const crypto = require("crypto");
 const path = require("path");
 const express = require("express");
 const helmet = require("helmet");
@@ -25,9 +28,19 @@ function createApp(options = {}) {
   const app = express();
 
   const isProd = process.env.NODE_ENV === "production";
-  const secret = process.env.SESSION_SECRET || (isProd ? null : "dev-only-secret-change-me");
+  let secret = process.env.SESSION_SECRET;
   if (!secret) {
-    throw new Error("SESSION_SECRET must be set when NODE_ENV=production");
+    if (isProd) {
+      // A random key can't be guessed, so login cookies stay unforgeable. The cost:
+      // every restart logs everyone out (and copies of the app can't share logins).
+      secret = crypto.randomBytes(32).toString("hex");
+      console.warn(
+        "WARNING: SESSION_SECRET is not set. Using a random key for this run, so everyone is " +
+          "logged out when the app restarts. Set SESSION_SECRET to fix this."
+      );
+    } else {
+      secret = "dev-only-secret-change-me"; // local development only
+    }
   }
   const secureCookies = process.env.COOKIE_SECURE === "true";
   const proxies = Number(process.env.TRUST_PROXY) || 0;

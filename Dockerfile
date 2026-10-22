@@ -1,8 +1,8 @@
 # Use an official, lightweight Node.js runtime as the base image
 FROM node:20-alpine
 
-# Production mode: turns on stricter checks (the app refuses to start
-# without SESSION_SECRET, so login cookies are never signed with a default key).
+# Production mode. Pass -e SESSION_SECRET=... when running the container; without it
+# the app uses a random key and logs everyone out on each restart.
 ENV NODE_ENV=production
 
 # Set the working directory inside the container
@@ -26,10 +26,14 @@ COPY . .
 # The SQLite database file lives in /app/data. Mount a volume here to keep data
 # when the container is replaced: docker run -v borrowbox-data:/app/data ...
 ENV DB_PATH=/app/data/borrowbox.db
+
+# Give the unprivileged "node" user ownership of the app folder BEFORE declaring the
+# volume. (Docker ignores changes made to a volume folder after the VOLUME line, and a
+# root-owned data folder would stop the app from creating its database.)
+RUN mkdir -p /app/data && chown -R node:node /app
 VOLUME ["/app/data"]
 
 # Run as the unprivileged "node" user instead of root
-RUN chown -R node:node /app
 USER node
 
 # Document which port the app listens on (informational; doesn't publish it)
