@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: borrowbox-deployment
+  labels:
+    app: borrowbox
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: borrowbox
+  template:
+    metadata:
+      labels:
+        app: borrowbox
+    spec:
+      containers:
+        - name: borrowbox
+          image: docker.io/library/borrowbox:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
+            - name: DB_PATH
+              value: "/app/data/borrowbox.db"
+            - name: SESSION_SECRET
+              value: "borrowbox-kubernetes-production-secret-key"
+          volumeMounts:
+            - name: sqlite-storage
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: sqlite-storage
+          persistentVolumeClaim:
+            claimName: borrowbox-data-pvc

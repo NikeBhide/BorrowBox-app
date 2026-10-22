@@ -16,10 +16,11 @@ pipeline {
         stage('Environment Check') {
             steps {
                 sh '''
-                    echo "Checking system tools..."
+                    echo "Checking tools..."
                     node --version
                     npm --version
                     docker --version
+                    kubectl version --client
                 '''
             }
         }
@@ -36,27 +37,28 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Container') {
             steps {
-                sh "docker build -t ${APP_NAME}:latest ."
+                sh '''
+                    echo "Building Docker image..."
+                    docker build -t ${APP_NAME}:latest .
+                    echo "Importing image into Kubernetes (k3s)..."
+                    docker save ${APP_NAME}:latest | sudo /usr/local/bin/k3s ctr images import -
+                '''
             }
         }
 
-        stage('Deploy Container') {
+        stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                    # Stop & remove old container if it exists
-                    docker stop ${APP_NAME} || true
-                    docker rm ${APP_NAME} || true
+                    echo "Applying Kubernetes manifests..."
+                    kubectl apply -f k8s/
 
-                    # Start new container with SQLite volume and session secret
-                    docker run -d \
-                        --name ${APP_NAME} \
-                        --restart unless-stopped \
-                        -p ${PORT}:3000 \
-                        -e SESSION_SECRET=borrowbox-aws-jenkins-session-secret-key \
-                        -v borrowbox-data:/app/data \
-                        ${APP_NAME}:latest
+                    echo "Triggering Kubernetes rollout restart..."
+                    kubectl rollout restart deployment/borrowbox-deployment
+
+                    echo "Waiting for Kubernetes pod rollout to complete..."
+                    kubectl rollout status deployment/borrowbox-deployment --timeout=120s
                 '''
             }
         }
@@ -64,9 +66,8 @@ pipeline {
         stage('Smoke Test (Health Check)') {
             steps {
                 sh '''
-                    # Give Express 5 seconds to boot
-                    sleep 5
-                    # Verify HTTP 200 response from /health route
+                    sleep 3
+                    echo "Verifying application health via Kubernetes Service..."
                     curl -f http://localhost:${PORT}/health
                 '''
             }
@@ -78,7 +79,7 @@ pipeline {
             cleanWs()
         }
         success {
-            echo "BorrowBox successfully deployed! Available at http://localhost:${PORT}"
+            echo "BorrowBox successfully deployed to Kubernetes!"
         }
         failure {
             echo "Pipeline failed. Check build logs above."
