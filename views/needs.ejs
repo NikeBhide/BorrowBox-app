@@ -1,0 +1,99 @@
+<%- include('partials/head') %>
+<div class="page-head">
+  <div>
+    <h1>Needed</h1>
+    <p class="muted">Post what you're looking for. Matching items from your college show up under your post.</p>
+  </div>
+</div>
+
+<div class="split">
+  <section class="card">
+    <h2>I need something</h2>
+    <% if (error) { %><div class="flash flash-error" role="alert"><%= error %></div><% } %>
+    <form method="POST" action="/needs" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>What do you need?
+        <input type="text" name="title" value="<%= form.title || '' %>" maxlength="80" placeholder="e.g. USB-C charger" required />
+      </label>
+      <label>Category
+        <select name="category" required>
+          <option value="">Choose one</option>
+          <% categories.forEach(function(c) { %>
+            <option value="<%= c %>" <%= form.category === c ? 'selected' : '' %>><%= c %></option>
+          <% }); %>
+        </select>
+      </label>
+      <label>Details <span class="hint">(optional)</span>
+        <textarea name="description" maxlength="300" rows="3" placeholder="When you need it and for how long"><%= form.description || '' %></textarea>
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Post to the board</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>My posts</h2>
+    <% if (mine.length === 0) { %>
+      <div class="empty card"><p class="muted">You haven't posted anything yet.</p></div>
+    <% } else { %>
+      <div class="stack">
+        <% mine.forEach(function(need) { %>
+          <article class="card item">
+            <div class="item-top">
+              <span class="tag"><%= need.category %></span>
+              <span class="badge badge-<%= need.status === 'open' ? 'requested' : 'available' %>">
+                <%= need.status === 'open' ? 'Looking' : 'Found' %>
+              </span>
+            </div>
+            <h3><%= need.title %></h3>
+            <% if (need.description) { %><p class="desc"><%= need.description %></p><% } %>
+
+            <% if (need.matches.length > 0) { %>
+              <div class="match">
+                <strong>Available in your college</strong>
+                <ul class="plain-list">
+                  <% need.matches.forEach(function(m) { %>
+                    <li>
+                      <%= m.name %> <span class="muted">(<%= m.owner_name %><%= m.pickup_spot ? ', ' + m.pickup_spot : '' %>)</span>
+                      <a href="/marketplace?q=<%= encodeURIComponent(m.name) %>">View</a>
+                    </li>
+                  <% }); %>
+                </ul>
+              </div>
+            <% } %>
+
+            <div class="actions">
+              <% if (need.status === 'open') { %>
+                <form method="POST" action="/needs/<%= need.id %>/fulfil" class="inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="btn btn-sm">I found it</button>
+                </form>
+              <% } %>
+              <form method="POST" action="/needs/<%= need.id %>/delete" class="inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="btn btn-ghost btn-sm btn-danger">Delete</button>
+              </form>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } %>
+
+    <h2 class="section-gap">Needed by others at your college</h2>
+    <% if (others.length === 0) { %>
+      <div class="empty card"><p class="muted">Nobody is looking for anything right now.</p></div>
+    <% } else { %>
+      <div class="stack">
+        <% others.forEach(function(need) { %>
+          <article class="card item">
+            <div class="item-top"><span class="tag"><%= need.category %></span></div>
+            <h3><%= need.title %></h3>
+            <% if (need.description) { %><p class="desc"><%= need.description %></p><% } %>
+            <p class="meta"><span>Posted by <%= need.requester_name %></span></p>
+            <p class="small">Got one? <a href="/locker">Add it to your locker</a> so they can find it.</p>
+          </article>
+        <% }); %>
+      </div>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/foot') %>

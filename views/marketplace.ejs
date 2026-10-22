@@ -1,0 +1,55 @@
+<%- include('partials/head') %>
+<div class="page-head">
+  <div>
+    <h1>Marketplace</h1>
+    <p class="muted"><span class="pill"><%= user.college_name %> &middot; <%= user.campus %></span> Only people from your college appear here.</p>
+  </div>
+  <a href="/locker" class="btn btn-primary">+ Add to my locker</a>
+</div>
+
+<form class="toolbar" method="GET" action="/marketplace" role="search">
+  <input type="search" name="q" value="<%= q %>" placeholder="Search items" maxlength="60" aria-label="Search items" />
+  <select name="category" data-autosubmit aria-label="Category">
+    <option value="">All categories</option>
+    <% categories.forEach(function(c) { %>
+      <option value="<%= c %>" <%= category === c ? 'selected' : '' %>><%= c %></option>
+    <% }); %>
+  </select>
+  <button type="submit" class="btn">Search</button>
+</form>
+
+<% if (items.length === 0) { %>
+  <div class="empty card">
+    <h3>Nothing here yet</h3>
+    <p class="muted">No items match. Be the first to <a href="/locker">add something to your locker</a>, or <a href="/needs">post what you need</a>.</p>
+  </div>
+<% } else { %>
+  <div class="grid grid-3">
+    <% items.forEach(function(item) { %>
+      <article class="card item">
+        <div class="item-top">
+          <span class="tag"><%= item.category %></span>
+          <span class="badge badge-<%= item.status %>">
+            <%= item.status === 'available' ? 'Available' : (item.status === 'requested' ? 'Requested' : 'Lent out') %>
+          </span>
+        </div>
+        <h3><%= item.name %></h3>
+        <% if (item.description) { %><p class="desc"><%= item.description %></p><% } %>
+        <p class="meta">
+          <span>Owner: <%= item.owner_name %></span>
+          <% if (item.pickup_spot) { %><span>Pickup: <%= item.pickup_spot %></span><% } %>
+        </p>
+        <% if (item.user_id === user.id) { %>
+          <p class="muted small">This is your item.</p>
+        <% } else if (item.status === 'available') { %>
+          <form method="POST" action="/items/<%= item.id %>/request" class="request-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="text" name="message" maxlength="200" placeholder="Optional note, e.g. need it Friday" aria-label="Note to owner" />
+            <button type="submit" class="btn btn-primary btn-block">Request to borrow</button>
+          </form>
+        <% } %>
+      </article>
+    <% }); %>
+  </div>
+<% } %>
+<%- include('partials/foot') %>

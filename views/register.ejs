@@ -1,0 +1,26 @@
+<%- include('partials/head') %>
+<section class="auth card">
+  <h1>Create your account</h1>
+  <p class="muted">Use your college email so we can put you on the right campus.</p>
+  <% if (error) { %><div class="flash flash-error" role="alert"><%= error %></div><% } %>
+  <form method="POST" action="/register" class="form" autocomplete="on">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>Full name
+      <input type="text" name="name" value="<%= form.name || '' %>" maxlength="60" required />
+    </label>
+    <label>College email
+      <input type="email" name="email" id="email" value="<%= form.email || '' %>" maxlength="200" required />
+    </label>
+    <p id="college-hint" class="hint" data-lookup-url="/colleges/lookup" aria-live="polite"></p>
+    <label>Password
+      <input type="password" name="password" minlength="8" maxlength="72" autocomplete="new-password" required />
+      <span class="hint">At least 8 characters.</span>
+    </label>
+    <label>Confirm password
+      <input type="password" name="confirm" minlength="8" maxlength="72" autocomplete="new-password" required />
+    </label>
+    <button type="submit" class="btn btn-primary btn-block">Create account</button>
+  </form>
+  <p class="muted center">Already have an account? <a href="/login">Log in</a></p>
+</section>
+<%- include('partials/foot') %>

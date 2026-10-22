@@ -1,0 +1,82 @@
+<%- include('partials/head') %>
+<div class="page-head">
+  <div>
+    <h1>Admin</h1>
+    <p class="muted"><span class="pill"><%= user.college_name %> &middot; <%= user.campus %></span> You can see and moderate this college only.</p>
+  </div>
+</div>
+
+<div class="grid grid-3 stats">
+  <div class="card stat"><span class="stat-n"><%= users.length %></span><span class="muted">Members</span></div>
+  <div class="card stat"><span class="stat-n"><%= items.length %></span><span class="muted">Locker items</span></div>
+  <div class="card stat"><span class="stat-n"><%= needs.length %></span><span class="muted">Needed posts</span></div>
+</div>
+
+<section class="card">
+  <h2>Members</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+      <tbody>
+        <% users.forEach(function(u) { %>
+          <tr><td><%= u.name %></td><td><%= u.email %></td><td><span class="tag"><%= u.role %></span></td></tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Locker items</h2>
+  <% if (items.length === 0) { %><p class="muted">No items.</p><% } else { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Item</th><th>Owner</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% items.forEach(function(i) { %>
+          <tr>
+            <td><%= i.name %></td>
+            <td><%= i.owner_name %></td>
+            <td><span class="badge badge-<%= i.status %>"><%= i.status %></span></td>
+            <td class="right">
+              <% if (i.status !== 'lent') { %>
+              <form method="POST" action="/locker/<%= i.id %>/delete" class="inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="btn btn-ghost btn-sm btn-danger">Remove</button>
+              </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<section class="card">
+  <h2>Needed posts</h2>
+  <% if (needs.length === 0) { %><p class="muted">No posts.</p><% } else { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Post</th><th>By</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% needs.forEach(function(n) { %>
+          <tr>
+            <td><%= n.title %></td>
+            <td><%= n.requester_name %></td>
+            <td><span class="tag"><%= n.status %></span></td>
+            <td class="right">
+              <form method="POST" action="/needs/<%= n.id %>/delete" class="inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="btn btn-ghost btn-sm btn-danger">Remove</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+<%- include('partials/foot') %>
