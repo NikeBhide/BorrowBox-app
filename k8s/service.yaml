@@ -3,15 +3,9 @@ kind: Service
 metadata:
   name: borrowbox-service
 spec:
-  type: LoadBalancer
   selector:
     app: borrowbox
   ports:
     - protocol: TCP
       port: 3000
       targetPort: 3000
-      name: app-port
-    - protocol: TCP
-      port: 80
-      targetPort: 3000
-      name: http-port

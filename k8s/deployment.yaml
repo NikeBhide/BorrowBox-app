@@ -22,18 +22,19 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
+              hostPort: 3000
           env:
             - name: PORT
               value: "3000"
             - name: NODE_ENV
               value: "production"
             - name: DB_PATH
-              value: "/app/data/borrowbox.db"
+              value: "/app/storage/borrowbox.db"
             - name: SESSION_SECRET
               value: "borrowbox-kubernetes-production-secret-key"
           volumeMounts:
             - name: sqlite-storage
-              mountPath: /app/data
+              mountPath: /app/storage
           livenessProbe:
             httpGet:
               path: /health
