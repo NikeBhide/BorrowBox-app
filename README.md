@@ -131,3 +131,13 @@ BorrowBox/
   several copies (for example on Kubernetes), move the data to a shared database
   such as Postgres. The queries are all in `data/db.js` and `routes/`.
 - Matching is simple keyword overlap, not AI.
+
+
+## CI/CD Pipeline
+
+The project is deployed via an automated Jenkins pipeline on AWS EC2:
+1. **GitHub Webhook**: Detects code pushed to `main`.
+2. **Automated Testing**: Executes full Jest test suite (`npm test`).
+3. **Container Build**: Compiles Docker image with native SQLite support.
+4. **Automated Deployment**: Replaces the container on port `3000` with data volume persistence (`borrowbox-data`).
+5. **Smoke Test**: Queries `/health` to verify runtime health.
