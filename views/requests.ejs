@@ -1,0 +1,74 @@
+<%- include('partials/head') %>
+<div class="page-head">
+  <div>
+    <h1>Requests</h1>
+    <p class="muted">Contact details are shared only after a request is accepted.</p>
+  </div>
+</div>
+
+<h2>People asking to borrow from you</h2>
+<% if (incoming.length === 0) { %>
+  <div class="empty card"><p class="muted">No requests yet.</p></div>
+<% } else { %>
+  <div class="stack">
+    <% incoming.forEach(function(r) { %>
+      <article class="card item">
+        <div class="item-top">
+          <h3><%= r.item_name %></h3>
+          <span class="badge badge-r-<%= r.status %>"><%= r.status %></span>
+        </div>
+        <p class="meta"><span>From: <%= r.other_name %></span></p>
+        <% if (r.message) { %><p class="desc">&ldquo;<%= r.message %>&rdquo;</p><% } %>
+        <% if (r.status === 'accepted') { %>
+          <p class="contact">Contact: <a href="mailto:<%= r.other_email %>"><%= r.other_email %></a><%= r.pickup_spot ? ' · Pickup: ' + r.pickup_spot : '' %></p>
+        <% } %>
+        <div class="actions">
+          <% if (r.status === 'pending') { %>
+            <form method="POST" action="/requests/<%= r.id %>/accept" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="btn btn-primary btn-sm">Accept</button>
+            </form>
+            <form method="POST" action="/requests/<%= r.id %>/decline" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="btn btn-sm">Decline</button>
+            </form>
+          <% } else if (r.status === 'accepted') { %>
+            <form method="POST" action="/requests/<%= r.id %>/return" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="btn btn-sm">Mark returned</button>
+            </form>
+          <% } %>
+        </div>
+      </article>
+    <% }); %>
+  </div>
+<% } %>
+
+<h2 class="section-gap">Items you asked to borrow</h2>
+<% if (outgoing.length === 0) { %>
+  <div class="empty card"><p class="muted">You haven't requested anything. <a href="/marketplace">Browse the marketplace</a>.</p></div>
+<% } else { %>
+  <div class="stack">
+    <% outgoing.forEach(function(r) { %>
+      <article class="card item">
+        <div class="item-top">
+          <h3><%= r.item_name %></h3>
+          <span class="badge badge-r-<%= r.status %>"><%= r.status %></span>
+        </div>
+        <p class="meta"><span>Owner: <%= r.other_name %></span></p>
+        <% if (r.status === 'accepted') { %>
+          <p class="contact">Contact: <a href="mailto:<%= r.other_email %>"><%= r.other_email %></a><%= r.pickup_spot ? ' · Pickup: ' + r.pickup_spot : '' %></p>
+        <% } %>
+        <% if (r.status === 'pending') { %>
+          <div class="actions">
+            <form method="POST" action="/requests/<%= r.id %>/cancel" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="btn btn-ghost btn-sm btn-danger">Cancel request</button>
+            </form>
+          </div>
+        <% } %>
+      </article>
+    <% }); %>
+  </div>
+<% } %>
+<%- include('partials/foot') %>

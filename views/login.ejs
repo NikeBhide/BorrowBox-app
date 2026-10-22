@@ -1,0 +1,17 @@
+<%- include('partials/head') %>
+<section class="auth card">
+  <h1>Welcome back</h1>
+  <% if (error) { %><div class="flash flash-error" role="alert"><%= error %></div><% } %>
+  <form method="POST" action="/login" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>College email
+      <input type="email" name="email" value="<%= form.email || '' %>" maxlength="200" autocomplete="username" required />
+    </label>
+    <label>Password
+      <input type="password" name="password" maxlength="72" autocomplete="current-password" required />
+    </label>
+    <button type="submit" class="btn btn-primary btn-block">Log in</button>
+  </form>
+  <p class="muted center">New here? <a href="/register">Create an account</a></p>
+</section>
+<%- include('partials/foot') %>

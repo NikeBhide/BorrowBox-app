@@ -49,11 +49,13 @@ pipeline {
                     docker stop ${APP_NAME} || true
                     docker rm ${APP_NAME} || true
 
-                    # Start new container
+                    # Start new container with SQLite volume and session secret
                     docker run -d \
                         --name ${APP_NAME} \
                         --restart unless-stopped \
                         -p ${PORT}:3000 \
+                        -e SESSION_SECRET=borrowbox-aws-jenkins-session-secret-key \
+                        -v borrowbox-data:/app/data \
                         ${APP_NAME}:latest
                 '''
             }

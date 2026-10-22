@@ -1,0 +1,48 @@
+<%- include('partials/head') %>
+<section class="hero">
+  <h1>Borrow what you need from people on your campus.</h1>
+  <p class="lead">
+    Lend the things you barely use, find the things you need, and meet up
+    between classes. Only students from your own college can see and borrow
+    from each other.
+  </p>
+  <div class="hero-actions">
+    <a href="/register" class="btn btn-primary btn-lg">Create your account</a>
+    <a href="/login" class="btn btn-lg">Log in</a>
+  </div>
+</section>
+
+<section class="grid grid-3 features">
+  <article class="card">
+    <h3>Your college only</h3>
+    <p>Sign up with your college email. We detect your college and campus, and you only ever see people from it.</p>
+  </article>
+  <article class="card">
+    <h3>Your locker</h3>
+    <p>List calculators, books, chargers, tools: anything you're happy to lend, with a pickup spot on campus.</p>
+  </article>
+  <article class="card">
+    <h3>The needed board</h3>
+    <p>Post what you're looking for. If someone's locker has it, you'll see the match straight away.</p>
+  </article>
+</section>
+
+<section class="card how">
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><strong>Sign up</strong> with your college email.</li>
+    <li><strong>Add to your locker</strong> or <strong>post what you need</strong>.</li>
+    <li><strong>Request an item.</strong> The owner accepts, and you both get each other's contact details.</li>
+    <li><strong>Meet at the pickup spot</strong>, borrow, and hand it back.</li>
+  </ol>
+</section>
+
+<section class="card">
+  <h2>Colleges on BorrowBox</h2>
+  <ul class="plain-list">
+    <% colleges.forEach(function(c) { %>
+      <li><strong><%= c.name %></strong> &middot; <%= c.campus %> <span class="muted">(@<%= c.domain %>)</span></li>
+    <% }); %>
+  </ul>
+</section>
+<%- include('partials/foot') %>

@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Northfield Institute of Technology",
+    "campus": "Main Campus",
+    "domain": "northfield.edu.in"
+  },
+  {
+    "name": "Riverside University",
+    "campus": "City Campus",
+    "domain": "riverside.edu.in"
+  },
+  {
+    "name": "Lakeview College of Arts",
+    "campus": "North Campus",
+    "domain": "lakeview.edu.in"
+  }
+]

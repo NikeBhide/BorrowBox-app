@@ -1,67 +1,134 @@
-const express = require("express");
-const bodyParser = require("body-parser");
+// BorrowBox: a campus borrowing marketplace.
+//
+// createApp() builds the whole web app and is used both by `npm start` and by
+// the tests (which pass in an in-memory database).
+//
+// Settings (environment variables):
+//   PORT            port to listen on (default 3000)
+//   SESSION_SECRET  long random string used to sign login cookies. REQUIRED when
+//                   NODE_ENV=production. Never commit it to the repo.
+//   DB_PATH         where the SQLite file lives (default data/borrowbox.db)
+//   ADMIN_EMAILS    comma-separated emails that become college admins on sign-up
+//   COOKIE_SECURE   "true" when the site is served over HTTPS
+//   TRUST_PROXY     number of proxies in front of the app (1 on Render/most hosts)
+
 const path = require("path");
-const store = require("./data/store");
+const express = require("express");
+const helmet = require("helmet");
+const cookieSession = require("cookie-session");
+const { openDb } = require("./data/db");
+const { CATEGORIES } = require("./lib/matching");
+const { csrf } = require("./lib/security");
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+function createApp(options = {}) {
+  const db = options.db || openDb();
+  const app = express();
 
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-app.use(express.static(path.join(__dirname, "public")));
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-// Health check route - used by the deployment platform and by the CI/CD
-// pipeline's smoke test to confirm the app booted correctly.
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
-});
-
-// Home page: lists all items, optionally filtered by category.
-app.get("/", (req, res) => {
-  const { category } = req.query;
-  const allItems = store.getAllItems();
-  const items = category
-    ? allItems.filter((item) => item.category === category)
-    : allItems;
-  res.render("index", { filteredItems: items });
-});
-
-// Form to add a new item.
-app.get("/items/new", (req, res) => {
-  res.render("new-item");
-});
-
-// Handle new item submission.
-app.post("/items", (req, res) => {
-  const { name, owner, category } = req.body;
-  if (!name || !owner || !category) {
-    return res.status(400).send("Missing required fields");
+  const isProd = process.env.NODE_ENV === "production";
+  const secret = process.env.SESSION_SECRET || (isProd ? null : "dev-only-secret-change-me");
+  if (!secret) {
+    throw new Error("SESSION_SECRET must be set when NODE_ENV=production");
   }
-  store.addItem({ name, owner, category });
-  res.redirect("/");
-});
+  const secureCookies = process.env.COOKIE_SECURE === "true";
+  const proxies = Number(process.env.TRUST_PROXY) || 0;
+  if (proxies > 0) app.set("trust proxy", proxies);
 
-// Request (borrow) an item.
-app.post("/items/:id/request", (req, res) => {
-  const item = store.requestItem(req.params.id);
-  if (!item) return res.status(404).send("Item not found");
-  res.redirect("/");
-});
+  app.set("view engine", "ejs");
+  app.set("views", path.join(__dirname, "views"));
 
-// Return a borrowed item.
-app.post("/items/:id/return", (req, res) => {
-  const item = store.returnItem(req.params.id);
-  if (!item) return res.status(404).send("Item not found");
-  res.redirect("/");
-});
+  // Security headers. Pages load only our own scripts and styles.
+  // (upgrade-insecure-requests is switched off so the app also works on plain HTTP.)
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          "script-src": ["'self'"],
+          "style-src": ["'self'"],
+          "img-src": ["'self'", "data:"],
+          "upgrade-insecure-requests": null,
+        },
+      },
+      hsts: secureCookies,
+    })
+  );
 
-// Only start listening if this file is run directly (not when required by tests).
+  // Health check: used by Docker, Kubernetes and the hosting platform.
+  app.get("/health", (req, res) => {
+    try {
+      db.prepare("SELECT 1").get();
+      res.status(200).json({ status: "ok" });
+    } catch (err) {
+      res.status(503).json({ status: "database unavailable" });
+    }
+  });
+
+  app.use(express.static(path.join(__dirname, "public")));
+  app.use(express.urlencoded({ extended: false, limit: "20kb" }));
+
+  // Login state lives in a signed cookie, so it works even with several copies
+  // of the app running behind a load balancer.
+  app.use(
+    cookieSession({
+      name: "borrowbox_session",
+      keys: [secret],
+      httpOnly: true,
+      sameSite: "lax",
+      secure: secureCookies,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+  );
+
+  // Who is logged in? Always re-read from the database so role and college
+  // can't be tampered with through the cookie.
+  app.use((req, res, next) => {
+    req.user = req.session.userId
+      ? db
+          .prepare(
+            `SELECT users.id, users.name, users.email, users.role, users.college_id,
+                    colleges.name AS college_name, colleges.campus AS campus
+             FROM users JOIN colleges ON colleges.id = users.college_id
+             WHERE users.id = ?`
+          )
+          .get(req.session.userId)
+      : undefined;
+    if (req.session.userId && !req.user) req.session = null; // user no longer exists
+
+    res.locals.user = req.user || null;
+    res.locals.categories = CATEGORIES;
+    res.locals.currentPath = req.path;
+    res.locals.flash = req.session && req.session.flash;
+    if (req.session && req.session.flash) delete req.session.flash;
+    next();
+  });
+
+  app.use(csrf);
+
+  app.use(require("./routes/auth")(db));
+  app.use(require("./routes/market")(db));
+
+  app.use((req, res) => {
+    res.status(404).render("error", { title: "Page not found", message: "That page doesn't exist." });
+  });
+
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).render("error", {
+      title: "Something went wrong",
+      message: "Something went wrong on our side. Please try again.",
+    });
+  });
+
+  app.locals.db = db;
+  return app;
+}
+
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`BorrowBox server running on port ${PORT}`);
+  const PORT = process.env.PORT || 3000;
+  createApp().listen(PORT, () => {
+    console.log(`BorrowBox running on port ${PORT}`);
   });
 }
 
-module.exports = app;
+module.exports = { createApp };

@@ -1,19 +1,26 @@
 {
   "name": "borrowbox",
   "version": "1.0.0",
-  "description": "Campus Item Lending Platform",
+  "description": "Campus borrowing marketplace: lockers, a needed board, and college-only access",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "jest --runInBand"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.10.0",
+    "cookie-session": "^2.1.1",
     "ejs": "^3.1.10",
-    "body-parser": "^1.20.2"
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^7.2.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
     "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

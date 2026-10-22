@@ -1,0 +1,86 @@
+<%- include('partials/head') %>
+<div class="page-head">
+  <div>
+    <h1>My locker</h1>
+    <p class="muted">Things you're happy to lend to people at <%= user.college_name %>.</p>
+  </div>
+</div>
+
+<div class="split">
+  <section class="card">
+    <h2>Add an item</h2>
+    <% if (error) { %><div class="flash flash-error" role="alert"><%= error %></div><% } %>
+    <form method="POST" action="/locker" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>What is it?
+        <input type="text" name="name" value="<%= form.name || '' %>" maxlength="80" placeholder="e.g. Casio fx-991 calculator" required />
+      </label>
+      <label>Category
+        <select name="category" required>
+          <option value="">Choose one</option>
+          <% categories.forEach(function(c) { %>
+            <option value="<%= c %>" <%= form.category === c ? 'selected' : '' %>><%= c %></option>
+          <% }); %>
+        </select>
+      </label>
+      <label>Details <span class="hint">(optional)</span>
+        <textarea name="description" maxlength="300" rows="3" placeholder="Condition, how long you can lend it"><%= form.description || '' %></textarea>
+      </label>
+      <label>Pickup spot on campus <span class="hint">(optional)</span>
+        <input type="text" name="pickup_spot" value="<%= form.pickup_spot || '' %>" maxlength="80" placeholder="e.g. Library entrance" />
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Add to locker</button>
+    </form>
+  </section>
+
+  <section>
+    <% if (items.length === 0) { %>
+      <div class="empty card">
+        <h3>Your locker is empty</h3>
+        <p class="muted">Add something you don't mind lending and it will show up on the marketplace.</p>
+      </div>
+    <% } else { %>
+      <div class="stack">
+        <% items.forEach(function(item) { %>
+          <article class="card item">
+            <div class="item-top">
+              <span class="tag"><%= item.category %></span>
+              <span class="badge badge-<%= item.status %>">
+                <%= item.status === 'available' ? 'Available' : (item.status === 'requested' ? 'Requested' : 'Lent out') %>
+              </span>
+            </div>
+            <h3><%= item.name %></h3>
+            <% if (item.description) { %><p class="desc"><%= item.description %></p><% } %>
+            <% if (item.pickup_spot) { %><p class="meta"><span>Pickup: <%= item.pickup_spot %></span></p><% } %>
+
+            <% if (item.wantedBy.length > 0) { %>
+              <div class="match">
+                <strong>Someone is looking for this</strong>
+                <ul class="plain-list">
+                  <% item.wantedBy.forEach(function(n) { %>
+                    <li><%= n.title %> <span class="muted">(<%= n.requester_name %>)</span></li>
+                  <% }); %>
+                </ul>
+              </div>
+            <% } %>
+
+            <div class="actions">
+              <% if (item.status === 'requested') { %>
+                <a href="/requests" class="btn btn-sm">View request</a>
+              <% } %>
+              <% if (item.status !== 'lent') { %>
+                <form method="POST" action="/locker/<%= item.id %>/delete" class="inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="btn btn-ghost btn-sm btn-danger">Remove</button>
+                </form>
+              <% } else { %>
+                <a href="/requests" class="btn btn-sm">Mark returned</a>
+              <% } %>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/foot') %>

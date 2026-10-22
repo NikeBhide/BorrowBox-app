@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %> · BorrowBox</title>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark">B</span>BorrowBox <span style="background:#28a745;color:white;padding:2px 8px;border-radius:10px;font-size:0.7em;margin-left:6px;vertical-align:middle;">🚀 CI/CD Active</span></a>
+      <% if (user) { %>
+        <nav class="nav" aria-label="Main">
+          <a href="/marketplace" class="<%= currentPath === '/marketplace' ? 'active' : '' %>">Marketplace</a>
+          <a href="/locker" class="<%= currentPath === '/locker' ? 'active' : '' %>">My locker</a>
+          <a href="/needs" class="<%= currentPath === '/needs' ? 'active' : '' %>">Needed</a>
+          <a href="/requests" class="<%= currentPath === '/requests' ? 'active' : '' %>">Requests</a>
+          <% if (user.role === 'admin') { %>
+            <a href="/admin" class="<%= currentPath === '/admin' ? 'active' : '' %>">Admin</a>
+          <% } %>
+        </nav>
+        <form class="logout" method="POST" action="/logout">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <span class="who"><%= user.name %></span>
+          <button type="submit" class="btn btn-ghost btn-sm">Log out</button>
+        </form>
+      <% } else { %>
+        <nav class="nav" aria-label="Account">
+          <a href="/login">Log in</a>
+          <a href="/register" class="btn btn-primary btn-sm">Sign up</a>
+        </nav>
+      <% } %>
+    </div>
+  </header>
+  <main class="wrap">
+    <% if (flash) { %>
+      <div class="flash flash-<%= flash.type %>" role="status"><%= flash.message %></div>
+    <% } %>
