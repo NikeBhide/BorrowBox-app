@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'node20'
-    }
-
     environment {
         APP_NAME = 'borrowbox'
         PORT     = '3000'
@@ -14,6 +10,17 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Environment Check') {
+            steps {
+                sh '''
+                    echo "Checking system tools..."
+                    node --version
+                    npm --version
+                    docker --version
+                '''
             }
         }
 
@@ -69,7 +76,7 @@ pipeline {
             cleanWs()
         }
         success {
-            echo "BorrowBox successfully deployed! Available at port ${PORT}"
+            echo "BorrowBox successfully deployed! Available at http://localhost:${PORT}"
         }
         failure {
             echo "Pipeline failed. Check build logs above."
