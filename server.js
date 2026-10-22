@@ -49,6 +49,14 @@ function createApp(options = {}) {
   app.set("view engine", "ejs");
   app.set("views", path.join(__dirname, "views"));
 
+  // Log non-healthcheck incoming requests to stdout
+  app.use((req, res, next) => {
+    if (req.path !== "/health") {
+      console.log("[" + new Date().toISOString() + "] " + req.method + " " + req.url);
+    }
+    next();
+  });
+
   // Security headers. Pages load only our own scripts and styles.
   // (upgrade-insecure-requests is switched off so the app also works on plain HTTP.)
   app.use(
