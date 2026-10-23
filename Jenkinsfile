@@ -42,9 +42,24 @@ pipeline {
                 sh '''
                     echo "Building Docker image..."
                     docker build -t ${APP_NAME}:latest .
-                    echo "Importing image into Kubernetes (k3s)..."
-                    docker save ${APP_NAME}:latest | sudo /usr/local/bin/k3s ctr images import -
                 '''
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
+                                                  usernameVariable: 'DH_USER',
+                                                  passwordVariable: 'DH_PASS')]) {
+                    sh '''
+                        echo "Logging in to Docker Hub..."
+                        echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+                        docker tag ${APP_NAME}:latest $DH_USER/${APP_NAME}:${BUILD_NUMBER}
+                        docker tag ${APP_NAME}:latest $DH_USER/${APP_NAME}:latest
+                        docker push $DH_USER/${APP_NAME}:${BUILD_NUMBER}
+                        docker push $DH_USER/${APP_NAME}:latest
+                    '''
+                }
             }
         }
 

@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
         - name: borrowbox
-          image: docker.io/library/borrowbox:latest
-          imagePullPolicy: IfNotPresent
+          image: docker.io/nikebhide/borrowbox:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
               hostPort: 3000
